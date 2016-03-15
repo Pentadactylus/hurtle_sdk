@@ -108,8 +108,6 @@ def get_service_endpoint(identifier, token,
     if 'DESIGN_URI' in os.environ:
         endpoint = os.environ['DESIGN_URI']
 
-    design = client.Client(token=token, endpoint=endpoint)
-
     if 'tenant_name' in kwargs:
         tname = kwargs['tenant_name']
     else:
@@ -120,36 +118,47 @@ def get_service_endpoint(identifier, token,
     else:
         region = 'RegionOne'
 
-    # find tenant id
-    tenant_id = None
-    for item in design.tenants.list():
-        if item.name == tname:
-            tenant_id = item.id
-    if tenant_id is None:
-        return None
-
-    # find service description.
-    service_ids = []
-    for item in design.services.list():
-        if item.type == identifier:
-            service_ids.append(design.services.get(item.id).id)
-    if len(service_ids) == 0:
-        return None
+    username = os.environ['HTTP_X_USERNAME']
+    password = os.environ['HTTP_X_PASSWORD']
 
     res = None
-    if 'allow_multiple' in kwargs and kwargs['allow_multiple']:
-            res = []
 
-    for item in design.endpoints.list():
-        for service_id in service_ids:
-            if service_id == item.service_id and region == item.region:
-                if 'allow_multiple' in kwargs and kwargs['allow_multiple']:
-                        res.append(_get_url_type(item, **kwargs))
-                else:
-                    res = _get_url_type(item, **kwargs)
-                    if '%(tenant_id)s' in res:
-                        res = res.replace('%(tenant_id)s', tenant_id)
-                    elif '$(tenant_id)s' in res:
-                        res = res.replace('$(tenant_id)s', tenant_id)
+    if username!='' and password!='':
+        design = client.Client(username=username,password=password,endpoint=endpoint,tenant_name=tname,region_name=region)
+        res = design.service_catalog.url_for(endpoint_type='public',service_type=identifier)
+    else:
+        design = client.Client(token=token, endpoint=endpoint)
+
+        # find tenant id
+        tenant_id = None
+        for item in design.tenants.list():
+            if item.name == tname:
+                tenant_id = item.id
+        if tenant_id is None:
+            return None
+
+        # find service description.
+        service_ids = []
+        for item in design.services.list():
+            if item.type == identifier:
+                service_ids.append(design.services.get(item.id).id)
+        if len(service_ids) == 0:
+            return None
+
+        res = None
+        if 'allow_multiple' in kwargs and kwargs['allow_multiple']:
+                res = []
+
+        for item in design.endpoints.list():
+            for service_id in service_ids:
+                if service_id == item.service_id and region == item.region:
+                    if 'allow_multiple' in kwargs and kwargs['allow_multiple']:
+                            res.append(_get_url_type(item, **kwargs))
+                    else:
+                        res = _get_url_type(item, **kwargs)
+                        if '%(tenant_id)s' in res:
+                            res = res.replace('%(tenant_id)s', tenant_id)
+                        elif '$(tenant_id)s' in res:
+                            res = res.replace('$(tenant_id)s', tenant_id)
 
     return res

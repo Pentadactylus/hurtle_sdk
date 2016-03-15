@@ -55,7 +55,7 @@ class KeyStoneAuthService(AuthService):
         """
         self.endpoint = endpoint
 
-    def verify(self, token, tenant_name='demo'):
+    def verify(self, **kwargs):
         """
         Verify a given token.
 
@@ -63,9 +63,21 @@ class KeyStoneAuthService(AuthService):
         :param tenant_name: A optional tenant name.
         """
         try:
-            client.Client(token=token,
-                          tenant_name=tenant_name,
-                          auth_url=self.endpoint)
+            if 'username' in kwargs and 'password' in kwargs:
+                user = kwargs['username']
+                pwd = kwargs['password']
+                # rgn = kwargs['region']
+                tnt = kwargs['tenant_name']
+
+                client.Client(username=user,
+                              password=pwd,
+                              tenant_name=tnt,
+                              auth_url=self.endpoint)#,
+                              # region_name=rgn)
+            elif 'token' in kwargs:
+                client.Client(token=kwargs['token'],
+                              tenant_name=kwargs['tenant_name'],
+                              auth_url=self.endpoint)
             return True
         except:
             return False
