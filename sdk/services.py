@@ -118,8 +118,8 @@ def get_service_endpoint(identifier, token,
     else:
         region = 'RegionOne'
 
-    username = os.environ['HTTP_X_USERNAME']
-    password = os.environ['HTTP_X_PASSWORD']
+    username = os.environ['OS_USERNAME']
+    password = os.environ['OS_PASSWORD']
 
     res = None
 
